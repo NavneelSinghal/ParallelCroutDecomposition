@@ -16,7 +16,7 @@ N := 100
 seed := 0
 s := 1
 avg := 0
-strategy := 1
+strategy := 2
 num_threads := 4
 
 clean:
