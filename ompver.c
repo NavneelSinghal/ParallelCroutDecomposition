@@ -38,7 +38,7 @@ void print_matrix(FILE *output, double **mat, int n, int m) {
     for (int i = 0; i < n; i++) {
         double *row = mat[i];
         for (int j = 0; j < m; j++)
-            fprintf(output, "%.3lf ", row[j]);
+            fprintf(output, "%.9lf ", row[j]);
         fprintf(output, "\n");
     }
 }
@@ -143,6 +143,51 @@ void strategy2(double **A, double **L, double **U, int n) {
     }
 }
 
+void strategy3(double **A, double **L, double **U, int n) {
+    int i, j, k;
+    double sum = 0;
+
+#pragma omp parallel for private(i) shared(A, L, U, n) num_threads(num_threads)
+    for (i = 0; i < n; i++)
+        U[i][i] = 1;
+
+    for (j = 0; j < n; j++) {
+#pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
+    num_threads(num_threads)
+        {
+#pragma omp sections
+            {
+#pragma omp section
+                {
+                    for (i = j + 1; i < n; i++) {
+                        sum = 0;
+                        for (k = 0; k < j; k++)
+                            sum += L[i][k] * U[k][j];
+                        L[i][j] = A[i][j] - sum;
+                    }
+                }
+#pragma omp section
+                {
+                    for (i = j; i <= j; i++) {
+                        sum = 0;
+                        for (k = 0; k < j; k++)
+                            sum += L[i][k] * U[k][j];
+                        L[i][j] = A[i][j] - sum;
+                    }
+                    for (i = j; i < n; i++) {
+                        sum = 0;
+                        for (k = 0; k < j; k++)
+                            sum += L[j][k] * U[k][i];
+                        if (L[j][j] == 0)
+                            exit(0);
+                        U[j][i] = (A[j][i] - sum) / L[j][j];
+                    }
+                }
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc < 6) {
         printf("Usage: %s N M inputfile num_threads strategy\n", argv[0]);
@@ -177,8 +222,8 @@ int main(int argc, char **argv) {
         strategy2(A, L, U, n);
         break;
     case 3:
-        /* strategy3(A, L, U, n); */
-        /* break; */
+        strategy3(A, L, U, n);
+        break;
     case 4:
         /* strategy4(A, L, U, n); */
         /* break; */
