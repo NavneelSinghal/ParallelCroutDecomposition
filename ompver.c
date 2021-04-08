@@ -17,12 +17,18 @@ double **alloc_matrix(int n, int m) {
     return mat;
 }
 
+void dealloc_matrix(double **a, int n) {
+    for (int i = 0; i < n; ++i)
+        free(a[i]);
+    free(a);
+}
+
 void read_matrix(FILE *input, double **mat, int n, int m) {
     double num;
     for (int i = 0; i < n; i++) {
         double *row = mat[i];
         for (int j = 0; j < m; j++) {
-            fscanf(input, "%lf ", &num);
+            fscanf(input, "%lf", &num);
             row[j] = num;
         }
     }
@@ -31,9 +37,8 @@ void read_matrix(FILE *input, double **mat, int n, int m) {
 void print_matrix(FILE *output, double **mat, int n, int m) {
     for (int i = 0; i < n; i++) {
         double *row = mat[i];
-        for (int j = 0; j < m; j++) {
+        for (int j = 0; j < m; j++)
             fprintf(output, "%.3lf ", row[j]);
-        }
         fprintf(output, "\n");
     }
 }
@@ -44,9 +49,8 @@ void multiply_matrix(double **A, double **B, double **C, int n) {
         double *row = C[i];
         for (int j = 0; j < n; j++) {
             double res = 0;
-            for (int k = 0; k < n; k++) {
+            for (int k = 0; k < n; k++)
                 res += A[i][k] * B[k][j];
-            }
             row[j] = res;
         }
     }
@@ -57,37 +61,82 @@ void LtoD(double **L, double **D, int n, int m) {
         D[i][i] = L[i][i];
         assert(D[i][i] != 0);
     }
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < m; j++) {
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < m; j++)
             L[i][j] /= D[j][j];
-        }
-    }
 }
 
 void strategy1(double **A, double **L, double **U, int n) {
     int i, j, k;
     double sum = 0;
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++)
         U[i][i] = 1;
-    }
 
     for (j = 0; j < n; j++) {
         for (i = j; i < n; i++) {
             sum = 0;
-            for (k = 0; k < j; k++) {
-                sum = sum + L[i][k] * U[k][j];
-            }
+            for (k = 0; k < j; k++)
+                sum += L[i][k] * U[k][j];
             L[i][j] = A[i][j] - sum;
         }
 
         for (i = j; i < n; i++) {
             sum = 0;
-            for (k = 0; k < j; k++) {
-                sum = sum + L[j][k] * U[k][i];
-            }
-            if (L[j][j] == 0) {
+            for (k = 0; k < j; k++)
+                sum += L[j][k] * U[k][i];
+            if (L[j][j] == 0)
                 exit(0);
+            U[j][i] = (A[j][i] - sum) / L[j][j];
+        }
+    }
+}
+
+void strategy2(double **A, double **L, double **U, int n) {
+
+    // int sqrt_threads = 0;
+    // while (sqrt_threads * sqrt_threads <= num_threads)
+    //     sqrt_threads++;
+    // sqrt_threads--;
+
+    int pw_sqrt = 1;
+    while (pw_sqrt * pw_sqrt <= num_threads)
+        pw_sqrt <<= 1;
+    pw_sqrt >>= 1;
+
+    for (int i = 0; i < n; ++i)
+        U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+#pragma omp parallel for num_threads(pw_sqrt)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+#pragma omp parallel num_threads(num_threads / pw_sqrt)
+            {
+                double s = 0;
+#pragma omp for
+                for (int k = 0; k < j; ++k)
+                    s += L[i][k] * U[k][j];
+#pragma omp critical
+                sum += s;
+            }
+            L[i][j] = A[i][j] - sum;
+        }
+
+        if (L[j][j] == 0)
+            exit(0);
+
+#pragma omp parallel for num_threads(pw_sqrt)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+#pragma omp parallel num_threads(num_threads / pw_sqrt)
+            {
+                double s = 0;
+#pragma omp for
+                for (int k = 0; k < j; ++k)
+                    s += L[j][k] * U[k][i];
+#pragma omp critical
+                sum += s;
             }
             U[j][i] = (A[j][i] - sum) / L[j][j];
         }
@@ -125,8 +174,8 @@ int main(int argc, char **argv) {
         strategy1(A, L, U, n);
         break;
     case 2:
-        /* strategy2(A, L, U, n); */
-        /* break; */
+        strategy2(A, L, U, n);
+        break;
     case 3:
         /* strategy3(A, L, U, n); */
         /* break; */
@@ -158,6 +207,12 @@ int main(int argc, char **argv) {
     FILE *ufile = fopen(buffer, "w");
     print_matrix(ufile, U, n, m);
     fclose(ufile);
+
+    /* Deallocate matrices -- change before submission */
+    dealloc_matrix(A, n);
+    dealloc_matrix(L, n);
+    dealloc_matrix(U, n);
+    dealloc_matrix(D, n);
 
     return 0;
 }
