@@ -1,3 +1,7 @@
 ompver
 gen
 tests/*.txt
+checker
+temp/
+output_*.txt
+testmatrix
