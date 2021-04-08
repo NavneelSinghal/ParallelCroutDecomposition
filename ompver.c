@@ -38,6 +38,32 @@ void print_matrix(FILE *output, double **mat, int n, int m) {
     }
 }
 
+void multiply_matrix(double **A, double **B, double **C, int n) {
+#pragma omp parallel for shared(A, B, C, n)
+    for (int i = 0; i < n; i++) {
+        double *row = C[i];
+        for (int j = 0; j < n; j++) {
+            double res = 0;
+            for (int k = 0; k < n; k++) {
+                res += A[i][k] * B[k][j];
+            }
+            row[j] = res;
+        }
+    }
+}
+
+void LtoD(double **L, double **D, int n, int m) {
+    for (int i = 0; i < n; i++) {
+        D[i][i] = L[i][i];
+        assert(D[i][i] != 0);
+    }
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < m; j++) {
+            L[i][j] /= D[j][j];
+        }
+    }
+}
+
 void strategy1(double **A, double **L, double **U, int n) {
     int i, j, k;
     double sum = 0;
@@ -112,16 +138,7 @@ int main(int argc, char **argv) {
     }
 
     // Construct D matrix
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (i != j)
-                D[i][j] = 0;
-            else {
-                D[i][j] = L[i][j];
-                L[i][j] = 1;
-            }
-        }
-    }
+    LtoD(L, D, n, m);
 
     /* Print L matrix (make it unit) */
     char buffer[1000];
