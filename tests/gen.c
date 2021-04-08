@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j)
-            printf("%0.6f ", s * (2 * rand() - 1) / RAND_MAX + avg);
+            printf("%0.6f ", s * (2 * rand() - RAND_MAX) / RAND_MAX + avg);
         printf("\n");
     }
 
