@@ -17,7 +17,7 @@ seed := 42
 s := 1
 avg := 0
 strategy := 2
-num_threads := 16
+num_threads := 8
 
 clean:
 	@rm -f testmatrix

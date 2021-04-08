@@ -96,6 +96,8 @@ void strategy1(double **A, double **L, double **U, int n) {
     }
 }
 
+// check what is the optimal value of pw_sqrt, and if strategy 2x is better than strategy 2
+
 void strategy2(double **A, double **L, double **U, int n) {
 
     // int sqrt_threads = 0;
@@ -103,12 +105,14 @@ void strategy2(double **A, double **L, double **U, int n) {
     //     sqrt_threads++;
     // sqrt_threads--;
 
-    int pw_sqrt = 1;
-    while (pw_sqrt * pw_sqrt <= num_threads)
-        pw_sqrt <<= 1;
-    pw_sqrt >>= 1;
-
-    pw_sqrt = num_threads / pw_sqrt;
+    // int pw_sqrt = 1;
+    // while (pw_sqrt * pw_sqrt <= num_threads)
+    //     pw_sqrt <<= 1;
+    // pw_sqrt >>= 1;
+    // pw_sqrt = num_threads / pw_sqrt;
+    
+    // int pw_sqrt = num_threads / 2;
+    int pw_sqrt = 2;
 
     for (int i = 0; i < n; ++i)
         U[i][i] = 1;
@@ -144,6 +148,72 @@ void strategy2(double **A, double **L, double **U, int n) {
 #pragma omp critical
                 sum += s;
             }
+            U[j][i] = (A[j][i] - sum) / L[j][j];
+        }
+    }
+}
+
+void strategy21(double **A, double **L, double **U, int n) {
+
+    for (int i = 0; i < n; ++i)
+        U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+#pragma omp parallel num_threads(num_threads)
+            {
+                double s = 0;
+#pragma omp for
+                for (int k = 0; k < j; ++k)
+                    s += L[i][k] * U[k][j];
+#pragma omp critical
+                sum += s;
+            }
+            L[i][j] = A[i][j] - sum;
+        }
+
+        if (L[j][j] == 0)
+            exit(0);
+
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+#pragma omp parallel num_threads(num_threads)
+            {
+                double s = 0;
+#pragma omp for
+                for (int k = 0; k < j; ++k)
+                    s += L[j][k] * U[k][i];
+#pragma omp critical
+                sum += s;
+            }
+            U[j][i] = (A[j][i] - sum) / L[j][j];
+        }
+    }
+}
+
+void strategy22(double **A, double **L, double **U, int n) {
+
+    for (int i = 0; i < n; ++i)
+        U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[i][k] * U[k][j];
+            L[i][j] = A[i][j] - sum;
+        }
+
+        if (L[j][j] == 0)
+            exit(0);
+
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[j][k] * U[k][i];
             U[j][i] = (A[j][i] - sum) / L[j][j];
         }
     }
@@ -225,7 +295,9 @@ int main(int argc, char **argv) {
         strategy1(A, L, U, n);
         break;
     case 2:
-        strategy2(A, L, U, n);
+        // strategy2(A, L, U, n);
+        // strategy21(A, L, U, n);
+        strategy22(A, L, U, n);
         break;
     case 3:
         strategy3(A, L, U, n);
