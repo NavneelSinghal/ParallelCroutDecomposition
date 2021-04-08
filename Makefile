@@ -12,16 +12,20 @@ tests/gen: tests/gen.c
 checker: checker.c
 	$(CC) -O3 -fopenmp $(WFLAGS) -o $@ $<
 
-N := 100
-seed := 0
+N := 1000
+seed := 42
 s := 1
 avg := 0
 strategy := 2
-num_threads := 4
+num_threads := 16
 
 clean:
 	@rm -f testmatrix
 	@rm -f output_*.txt
+
+run: clean ompver tests/gen
+	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix
+	@time ./ompver $(N) $(N) testmatrix $(num_threads) $(strategy)
 
 check: clean ompver tests/gen checker
 	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix

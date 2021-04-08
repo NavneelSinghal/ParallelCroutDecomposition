@@ -56,11 +56,15 @@ void multiply_matrix(double **A, double **B, double **C, int n) {
     }
 }
 
+// long double minabs = 1e18;
+
 void LtoD(double **L, double **D, int n, int m) {
     for (int i = 0; i < n; i++) {
         D[i][i] = L[i][i];
         assert(D[i][i] != 0);
+        // if (minabs > abs(D[i][i])) minabs = abs(D[i][i]);
     }
+    // printf("minabs = %0.100Lf\n", minabs);
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
             L[i][j] /= D[j][j];
@@ -103,6 +107,8 @@ void strategy2(double **A, double **L, double **U, int n) {
     while (pw_sqrt * pw_sqrt <= num_threads)
         pw_sqrt <<= 1;
     pw_sqrt >>= 1;
+
+    pw_sqrt = num_threads / pw_sqrt;
 
     for (int i = 0; i < n; ++i)
         U[i][i] = 1;
