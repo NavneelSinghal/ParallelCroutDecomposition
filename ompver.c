@@ -238,6 +238,35 @@ void strategy22(double **A, double **L, double **U, int n) {
     }
 }
 
+void strategy22_transpose(double **A, double **L, double **U, int n) {
+
+    for (int i = 0; i < n; ++i)
+        U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[i][k] * U[j][k];
+            L[i][j] = A[i][j] - sum;
+        }
+
+        if (L[j][j] == 0)
+            exit(0);
+
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[j][k] * U[i][k];
+            U[i][j] = (A[j][i] - sum) / L[j][j];
+        }
+    }
+
+    transpose_matrix(U, n);
+}
+
 void strategy22_pack(double **A, double **L, double **U, int n) {
 
     // for (int i = 0; i < n; ++i)
@@ -272,6 +301,7 @@ void strategy22_pack(double **A, double **L, double **U, int n) {
         }
     }
 }
+
 void strategy23(double **A, double **L, double **U, int n) {
 
     for (int i = 0; i < n; ++i)
@@ -307,6 +337,43 @@ void strategy23(double **A, double **L, double **U, int n) {
     }
 }
 
+void strategy24(double **A, double **L, double **U, int n) {
+
+    for (int i = 0; i < n; ++i)
+        U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+        for (int i = j; i <= j; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[i][k] * U[j][k];
+            L[i][j] = A[i][j] - sum;
+        }
+#pragma omp parallel shared(A, L, U, n, j) num_threads(num_threads)
+        {
+#pragma omp for nowait
+            for (int i = j + 1; i < n; ++i) {
+                double sum = 0;
+                for (int k = 0; k < j; ++k)
+                    sum += L[i][k] * U[j][k];
+                L[i][j] = A[i][j] - sum;
+            }
+
+#pragma omp for
+            for (int i = j; i < n; ++i) {
+                if (L[j][j] == 0)
+                    exit(0);
+                double sum = 0;
+                for (int k = 0; k < j; ++k)
+                    sum += L[j][k] * U[i][k];
+                U[i][j] = (A[j][i] - sum) / L[j][j];
+            }
+        }
+    }
+
+    transpose_matrix(U, n);
+}
+
 void strategy3(double **A, double **L, double **U, int n) {
     int i, j, k;
     double sum = 0;
@@ -331,8 +398,6 @@ void strategy3(double **A, double **L, double **U, int n) {
 
     for (i = 0; i < n; i++)
         U[i][i] = 1;
-
-    transpose_matrix(U, n);
 
     int n2 = n / 2;
 
@@ -386,8 +451,6 @@ void strategy32(double **A, double **L, double **U, int n) {
     for (i = 0; i < n; i++)
         U[i][i] = 1;
 
-    transpose_matrix(U, n);
-
     for (j = 0; j < n; j++) {
         LLoop(j, j + 1)
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
@@ -415,8 +478,6 @@ void strategy4(double **A, double **L, double **U, int n) {
 
     for (i = 0; i < n; i++)
         U[i][i] = 1;
-
-    transpose_matrix(U, n);
 
     for (j = 0; j < n; j++) {
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
@@ -506,8 +567,10 @@ int main(int argc, char **argv) {
         // strategy2(A, L, U, n);
         // strategy21(A, L, U, n);
         // strategy22(A, L, U, n);
-        strategy22_pack(A, L, U, n);
+        // strategy22_pack(A, L, U, n);
+        strategy22_transpose(A, L, U, n);
         // strategy23(A, L, U, n);
+        // strategy24(A, L, U, n);
         break;
     case 3:
         /* strategy3(A, L, U, n); */
