@@ -337,7 +337,7 @@ void strategy23(double **A, double **L, double **U, int n) {
     }
 }
 
-void strategy24(double **A, double **L, double **U, int n) {
+void strategy23_transpose(double **A, double **L, double **U, int n) {
 
     for (int i = 0; i < n; ++i)
         U[i][i] = 1;
@@ -479,16 +479,19 @@ void strategy4(double **A, double **L, double **U, int n) {
     for (i = 0; i < n; i++)
         U[i][i] = 1;
 
+    int nt = min(2, num_threads);
+    int nested = (num_threads + 1) >> 1;
+
     for (j = 0; j < n; j++) {
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
-    num_threads(min(2, num_threads))
+    num_threads(nt)
         {
 #pragma omp sections
             {
 #pragma omp section
                 {
 #pragma omp parallel for private(i, k, sum) shared(A, L, U, n, j)              \
-    num_threads((num_threads + 1) / 2)
+    num_threads(nested)
                     for (i = j + 1; i < n; i++) {
                         sum = 0;
                         for (k = 0; k < j; k++)
@@ -506,8 +509,8 @@ void strategy4(double **A, double **L, double **U, int n) {
                         L[i][j] = A[i][j] - sum;
                     }
 #pragma omp parallel for private(i, k, sum) shared(A, L, U, n, j)              \
-    num_threads((num_threads + 1) / 2)
-                    for (i = j; i < n; i++) {
+    num_threads(nested)
+                    for (i = j + 1; i < n; i++) {
                         sum = 0;
                         for (k = 0; k < j; k++)
                             sum += L[j][k] * U[i][k];
@@ -570,7 +573,7 @@ int main(int argc, char **argv) {
         // strategy22_pack(A, L, U, n);
         strategy22_transpose(A, L, U, n);
         // strategy23(A, L, U, n);
-        // strategy24(A, L, U, n);
+        // strategy23_transpose(A, L, U, n);
         break;
     case 3:
         /* strategy3(A, L, U, n); */
