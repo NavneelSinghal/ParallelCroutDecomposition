@@ -626,8 +626,8 @@ int main(int argc, char **argv) {
         strategy32(A, L, U, n);
         break;
     case 4:
-        // strategy4(A, L, U, n);
-        strategy42(A, L, U, n);
+        strategy4(A, L, U, n);
+        // strategy42(A, L, U, n);
         break;
     default:
         fprintf(stderr, "Strategy %d not recognized/implemented\n", strategy);
