@@ -76,6 +76,9 @@ void LtoD(double **L, double **D, int n, int m) {
             L[i][j] /= D[j][j];
 }
 
+#define chunk_size(start, end)                                                 \
+    (((end) - (start) + (num_processes)-1) / (num_processes))
+
 void crout(double **A, double **L, double **U, int n) {
     int i, j, k;
     double sum = 0;
@@ -87,16 +90,17 @@ void crout(double **A, double **L, double **U, int n) {
 
     /* Allocate a buffer of size 2*n for communication */
     /* Stack should be sufficient (16kB for n~1024) */
-    double buffer[2 * n];
+    double buffer[2 * chunk_size(0, n) * num_processes];
 
     for (j = 0; j < n; j++) {
         /* Let each worker compute L[j][j] on its own O(n) */
-        for (i = j; i <= j; i++) {
-            sum = 0;
-            for (k = 0; k < j; k++) {
-                sum = sum + L[i][k] * U[k][j];
-            }
-            L[i][j] = A[i][j] - sum;
+        sum = 0;
+        for (k = 0; k < j; k++)
+            sum += L[j][k] * U[k][j];
+        L[j][j] = A[j][j] - sum;
+        if (L[j][j] == 0) {
+            fprintf(stderr, "Fatal: Non-decomposable\n");
+            MPI_Abort(MPI_COMM_WORLD, -1);
         }
 
         /* We now need to iterate from j+1 -> n in num_processes chunks.
@@ -105,41 +109,43 @@ void crout(double **A, double **L, double **U, int n) {
          *      en[rank=n-1] = n
          *      en[rank=i] = st[rank=i+1]
          */
-        int st = (j + 1) + ((n - (j + 1)) / num_processes) * rank +
-                 min((n - (j + 1)) % num_processes, rank);
-        int en = (j + 1) + ((n - (j + 1)) / num_processes) * (rank + 1) +
-                 min((n - (j + 1)) % num_processes, rank + 1);
+
+        if (j == n - 1) {
+            // we probably don't need to compute the rest of it
+            break;
+        }
+
+        // chunk size becomes 0 if j == n - 1,
+        // since there are really no iterations to be done
+        int size = chunk_size(j + 1, n);
+        int st = j + 1 + rank * size;
+        int en = min(n, st + size);
 
         for (i = st; i < en; i++) {
             sum = 0;
-            for (k = 0; k < j; k++) {
-                sum = sum + L[i][k] * U[k][j];
-            }
+            for (k = 0; k < j; k++)
+                sum += L[i][k] * U[k][j];
             /* L[i][j] = A[i][j] - sum; */
             buffer[2 * (i - st)] = A[i][j] - sum;
 
             sum = 0;
-            for (k = 0; k < j; k++) {
-                sum = sum + L[j][k] * U[k][i];
-            }
-            if (L[j][j] == 0) {
-                fprintf(stderr, "Fatal: Non-decomposable\n");
-                MPI_Abort(MPI_COMM_WORLD, -1);
-            }
+            for (k = 0; k < j; k++)
+                sum += L[j][k] * U[k][i];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
             buffer[2 * (i - st) + 1] = (A[j][i] - sum) / L[j][j];
         }
 
         /* Gather all results of this iteration into master */
         if (rank != 0)
-            MPI_Gather(buffer, 2 * (en - st), MPI_DOUBLE, NULL, 2 * (en - st),
-                       MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            MPI_Gather(buffer, 2 * size, MPI_DOUBLE, NULL, 2 * size, MPI_DOUBLE,
+                       0, MPI_COMM_WORLD);
         else
-            MPI_Gather(MPI_IN_PLACE, 2 * (en - st), MPI_DOUBLE, buffer,
-                       2 * (en - st), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            MPI_Gather(MPI_IN_PLACE, 2 * size, MPI_DOUBLE, buffer, 2 * size,
+                       MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
         /* Broadcast buffer from master back to all workers */
-        MPI_Bcast(buffer, 2 * (n - (j + 1)), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Bcast(buffer, 2 * size * num_processes, MPI_DOUBLE, 0,
+                  MPI_COMM_WORLD);
 
         /* Copy buffer into respective matrices */
         for (i = j + 1; i < n; i++) {
@@ -156,7 +162,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
 
-        TIMEIT_START;
+    TIMEIT_START;
 
     if (argc < 4) {
         if (rank == 0) {
