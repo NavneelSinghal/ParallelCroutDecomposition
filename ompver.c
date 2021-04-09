@@ -15,9 +15,10 @@ double start_time, end_time;
 
 double **alloc_matrix(int n, int m) {
     double **mat = (double **)malloc(sizeof(double *) * n);
+    double *mem = (double *)malloc(sizeof(double) * n * m);
 #pragma omp parallel for shared(mat, n, m) num_threads(num_threads)
     for (int i = 0; i < n; i++) {
-        mat[i] = (double *)malloc(sizeof(double) * m);
+        mat[i] = &mem[m * i];
         double *row = mat[i];
         for (int j = 0; j < m; j++)
             row[j] = 0;
@@ -26,8 +27,7 @@ double **alloc_matrix(int n, int m) {
 }
 
 void dealloc_matrix(double **a, int n) {
-    for (int i = 0; i < n; ++i)
-        free(a[i]);
+    free(*a);
     free(a);
 }
 
@@ -356,6 +356,57 @@ void strategy3(double **A, double **L, double **U, int n) {
     }
 
     transpose_matrix(U, n);
+
+#undef LLoop
+#undef ULoop
+}
+
+void strategy32(double **A, double **L, double **U, int n) {
+    int i, j, k;
+    double sum = 0;
+
+#define LLoop(st, en)                                                          \
+    for (i = st; i < en; i++) {                                                \
+        sum = 0;                                                               \
+        for (k = 0; k < j; k++)                                                \
+            sum += L[i][k] * U[j][k];                                          \
+        L[i][j] = A[i][j] - sum;                                               \
+    }
+
+#define ULoop(st, en)                                                          \
+    for (i = st; i < en; i++) {                                                \
+        sum = 0;                                                               \
+        for (k = 0; k < j; k++)                                                \
+            sum += L[j][k] * U[i][k];                                          \
+        if (L[j][j] == 0)                                                      \
+            exit(0);                                                           \
+        U[i][j] = (A[j][i] - sum) / L[j][j];                                   \
+    }
+
+    for (i = 0; i < n; i++)
+        U[i][i] = 1;
+
+    transpose_matrix(U, n);
+
+    for (j = 0; j < n; j++) {
+        LLoop(j, j + 1)
+#pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
+    num_threads(num_threads)
+        {
+#pragma omp sections
+            {
+#pragma omp section
+                { LLoop(j + 1, n) }
+#pragma omp section
+                { ULoop(j, n) }
+            }
+        }
+    }
+
+    transpose_matrix(U, n);
+
+#undef LLoop
+#undef ULoop
 }
 
 void strategy4(double **A, double **L, double **U, int n) {
@@ -459,7 +510,8 @@ int main(int argc, char **argv) {
         // strategy23(A, L, U, n);
         break;
     case 3:
-        strategy3(A, L, U, n);
+        /* strategy3(A, L, U, n); */
+        strategy32(A, L, U, n);
         break;
     case 4:
         strategy4(A, L, U, n);
