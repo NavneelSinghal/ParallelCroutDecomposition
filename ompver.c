@@ -115,7 +115,8 @@ void strategy1(double **A, double **L, double **U, int n) {
     }
 }
 
-// check what is the optimal value of pw_sqrt, and if strategy 2x is better than strategy 2
+// check what is the optimal value of pw_sqrt, and if strategy 2x is better than
+// strategy 2
 
 void strategy2(double **A, double **L, double **U, int n) {
 
@@ -129,7 +130,7 @@ void strategy2(double **A, double **L, double **U, int n) {
     //     pw_sqrt <<= 1;
     // pw_sqrt >>= 1;
     // pw_sqrt = num_threads / pw_sqrt;
-    
+
     // int pw_sqrt = num_threads / 2;
     int pw_sqrt = 2;
 
@@ -483,8 +484,7 @@ void strategy4(double **A, double **L, double **U, int n) {
     int nested = (num_threads + 1) >> 1;
 
     for (j = 0; j < n; j++) {
-#pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
-    num_threads(nt)
+#pragma omp parallel private(i, k, sum) shared(A, L, U, n, j) num_threads(nt)
         {
 #pragma omp sections
             {
@@ -518,6 +518,52 @@ void strategy4(double **A, double **L, double **U, int n) {
                             exit(0);
                         U[i][j] = (A[j][i] - sum) / L[j][j];
                     }
+                }
+            }
+        }
+    }
+
+    transpose_matrix(U, n);
+}
+
+void strategy42(double **A, double **L, double **U, int n) {
+    int i, j, k;
+    double sum = 0;
+
+    for (i = 0; i < n; i++)
+        U[i][i] = 1;
+
+    int nt = min(2, num_threads);
+    int nested = (num_threads + 1) >> 1;
+
+    for (j = 0; j < n; j++) {
+        {
+            sum = 0;
+            for (k = 0; k < j; ++k)
+                sum += L[j][k] * U[j][k];
+            L[j][j] = A[j][j] - sum;
+        }
+#pragma omp parallel for private(i, k, sum) shared(A, L, U, n, j)              \
+    num_threads(nested)
+        for (i = j + 1; i < n; ++i) {
+#pragma omp parallel sections private(k, sum) shared(A, L, U, n, j)            \
+    num_threads(nt)
+            {
+                sum = 0;
+#pragma omp section
+                {
+                    for (k = 0; k < j; k++)
+                        sum += L[i][k] * U[j][k];
+                    L[i][j] = A[i][j] - sum;
+                }
+
+#pragma omp section
+                {
+                    for (k = 0; k < j; k++)
+                        sum += L[j][k] * U[i][k];
+                    if (L[j][j] == 0)
+                        exit(0);
+                    U[i][j] = (A[j][i] - sum) / L[j][j];
                 }
             }
         }
@@ -580,7 +626,8 @@ int main(int argc, char **argv) {
         strategy32(A, L, U, n);
         break;
     case 4:
-        strategy4(A, L, U, n);
+        // strategy4(A, L, U, n);
+        strategy42(A, L, U, n);
         break;
     default:
         fprintf(stderr, "Strategy %d not recognized/implemented\n", strategy);
