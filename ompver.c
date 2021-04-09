@@ -238,6 +238,40 @@ void strategy22(double **A, double **L, double **U, int n) {
     }
 }
 
+void strategy22_pack(double **A, double **L, double **U, int n) {
+
+    // for (int i = 0; i < n; ++i)
+    //    U[i][i] = 1;
+
+    for (int j = 0; j < n; ++j) {
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[i][k] * L[k][j];
+            L[i][j] = A[i][j] - sum;
+        }
+
+        if (L[j][j] == 0)
+            exit(0);
+
+#pragma omp parallel for num_threads(num_threads)
+        for (int i = j + 1; i < n; ++i) {
+            double sum = 0;
+            for (int k = 0; k < j; ++k)
+                sum += L[j][k] * L[k][i];
+            L[j][i] = (A[j][i] - sum) / L[j][j];
+        }
+    }
+
+    for (int i = 0; i < n; ++i) {
+        U[i][i] = 1;
+        for (int j = i + 1; j < n; ++j) {
+            U[i][j] = L[i][j];
+            L[i][j] = 0;
+        }
+    }
+}
 void strategy23(double **A, double **L, double **U, int n) {
 
     for (int i = 0; i < n; ++i)
@@ -300,6 +334,8 @@ void strategy3(double **A, double **L, double **U, int n) {
 
     transpose_matrix(U, n);
 
+    int n2 = n / 2;
+
     for (j = 0; j < n; j++) {
         LLoop(j, j + 1)
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
@@ -308,13 +344,13 @@ void strategy3(double **A, double **L, double **U, int n) {
 #pragma omp sections
             {
 #pragma omp section
-                { LLoop(j + 1, n / 2) }
+                { LLoop(j + 1, n2) }
 #pragma omp section
-                { LLoop(n / 2, n) }
+                { LLoop(n2, n) }
 #pragma omp section
-                { ULoop(j, n / 2) }
+                { ULoop(j, n2) }
 #pragma omp section
-                { ULoop(n / 2, n) }
+                { ULoop(n2, n) }
             }
         }
     }
@@ -418,8 +454,9 @@ int main(int argc, char **argv) {
     case 2:
         // strategy2(A, L, U, n);
         // strategy21(A, L, U, n);
-        strategy22(A, L, U, n);
-        /* strategy23(A, L, U, n); */
+        // strategy22(A, L, U, n);
+        strategy22_pack(A, L, U, n);
+        // strategy23(A, L, U, n);
         break;
     case 3:
         strategy3(A, L, U, n);
