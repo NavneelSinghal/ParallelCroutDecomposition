@@ -13,7 +13,7 @@ checker: checker.c
 	$(CC) -O3 -fopenmp $(WFLAGS) -o $@ $<
 
 N := 1000
-seed := 42
+seed := 3
 s := 1
 avg := 0
 strategy := 2
