@@ -235,7 +235,8 @@ void crout_transpose(double **A, double **L, double **U, int n) {
         /* Brace for next iteration */
     }
 
-    transpose_matrix(U, n);
+    if (rank == 0)
+        transpose_matrix(U, n);
 }
 
 void crout_transpose_contiguous_buffer(double **A, double **L, double **U,
@@ -294,13 +295,13 @@ void crout_transpose_contiguous_buffer(double **A, double **L, double **U,
             for (k = 0; k < j; k++)
                 sum += Li[k] * Uj[k];
             /* L[i][j] = A[i][j] - sum; */
-            buffer[i - st] = A[i][j] - sum;
+            buffer[2 * (i - st)] = A[i][j] - sum;
 
             sum = 0;
             for (k = 0; k < j; k++)
                 sum += Lj[k] * Ui[k];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
-            buffer[i - st + size] = (A[j][i] - sum) / L[j][j];
+            buffer[2 * (i - st) + 1] = (A[j][i] - sum) / L[j][j];
         }
 
         /* Gather all results of this iteration into master */
@@ -317,14 +318,15 @@ void crout_transpose_contiguous_buffer(double **A, double **L, double **U,
 
         /* Copy buffer into respective matrices */
         for (i = j + 1; i < n; i++) {
-            L[i][j] = buffer[i - (j + 1)];
-            U[i][j] = buffer[i - (j + 1) + size];
+            L[i][j] = buffer[2 * (i - (j + 1))];
+            U[i][j] = buffer[2 * (i - (j + 1)) + 1];
         }
 
         /* Brace for next iteration */
     }
 
-    transpose_matrix(U, n);
+    if (rank == 0)
+        transpose_matrix(U, n);
 }
 
 void crout_gatherall(double **A, double **L, double **U, int n) {
@@ -384,28 +386,30 @@ void crout_gatherall(double **A, double **L, double **U, int n) {
             for (k = 0; k < j; k++)
                 sum += Li[k] * Uj[k];
             /* L[i][j] = A[i][j] - sum; */
-            buffer[i - st] = A[i][j] - sum;
+            buffer[2 * (i - st)] = A[i][j] - sum;
 
             sum = 0;
             for (k = 0; k < j; k++)
                 sum += Lj[k] * Ui[k];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
-            buffer[i - st + size] = (A[j][i] - sum) / L[j][j];
+            buffer[2 * (i - st) + 1] = (A[j][i] - sum) / L[j][j];
         }
 
         /* Gather all results of this iteration into master */
-        MPI_Allgather(buffer, 2 * size, MPI_DOUBLE, recv_buffer, 2 * size, MPI_DOUBLE, MPI_COMM_WORLD);
+        MPI_Allgather(buffer, 2 * size, MPI_DOUBLE, recv_buffer, 2 * size,
+                      MPI_DOUBLE, MPI_COMM_WORLD);
 
         /* Copy buffer into respective matrices */
         for (i = j + 1; i < n; i++) {
-            L[i][j] = recv_buffer[i - (j + 1)];
-            U[i][j] = recv_buffer[i - (j + 1) + size];
+            L[i][j] = recv_buffer[2 * (i - (j + 1))];
+            U[i][j] = recv_buffer[2 * (i - (j + 1)) + 1];
         }
 
         /* Brace for next iteration */
     }
 
-    transpose_matrix(U, n);
+    if (rank == 0)
+        transpose_matrix(U, n);
 }
 
 void crout_async(double **A, double **L, double **U, int n) {
@@ -430,6 +434,9 @@ void crout_async(double **A, double **L, double **U, int n) {
         double *Lj = L[j];
         double *Uj = U[j];
 
+        double *send_turn = send_buffer[turn];
+        double *recv_turn = recv_buffer[turn];
+
         /* Let each worker compute L[j][j] on its own O(n) */
         sum = 0;
         for (k = 0; k < j - 1; k++)
@@ -448,13 +455,13 @@ void crout_async(double **A, double **L, double **U, int n) {
             for (k = 0; k < j - 1; k++)
                 sum += Li[k] * Uj[k];
             /* L[i][j] = A[i][j] - sum; */
-            send_buffer[turn][i - st] = A[i][j] - sum;
+            send_turn[2 * (i - st)] = A[i][j] - sum;
 
             sum = 0;
             for (k = 0; k < j - 1; k++)
                 sum += Lj[k] * Ui[k];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
-            send_buffer[turn][i - st + size] = (A[j][i] - sum);
+            send_turn[2 * (i - st) + 1] = (A[j][i] - sum);
         }
 
         if (allgather_request != MPI_REQUEST_NULL) {
@@ -465,8 +472,8 @@ void crout_async(double **A, double **L, double **U, int n) {
             }
             /* Copy buffer into respective matrices */
             for (i = j; i < n; i++) {
-                L[i][j - 1] = recv_buffer[turn][i - j];
-                U[i][j - 1] = recv_buffer[turn][i - j + size];
+                L[i][j - 1] = recv_turn[2 * (i - j)];
+                U[i][j - 1] = recv_turn[2 * (i - j) + 1];
             }
         }
 
@@ -492,23 +499,23 @@ void crout_async(double **A, double **L, double **U, int n) {
             for (k = j - 1; k < j; k++)
                 sum += Li[k] * Uj[k];
             /* L[i][j] = A[i][j] - sum; */
-            send_buffer[turn][i - st] -= sum;
+            send_turn[2 * (i - st)] -= sum;
 
             sum = 0;
             for (k = 0; k < j; k++)
                 sum += Lj[k] * Ui[k];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
-            send_buffer[turn][i - st + size] =
-                (send_buffer[turn][i - st + size] - sum) / L[j][j];
+            send_turn[2 * (i - st) + 1] =
+                (send_turn[2 * (i - st) + 1] - sum) / L[j][j];
         }
 
         /* Gather all results of this iteration into master */
-        MPI_Iallgather(send_buffer[turn], 2 * size, MPI_DOUBLE,
-                       recv_buffer[(turn + 1) % 2], 2 * size, MPI_DOUBLE,
+        MPI_Iallgather(send_turn, 2 * size, MPI_DOUBLE,
+                       recv_buffer[turn ^ 1], 2 * size, MPI_DOUBLE,
                        MPI_COMM_WORLD, &allgather_request);
 
         /* Brace for next iteration */
-        turn = (turn + 1) % 2;
+        turn ^= 1;
     }
 
     if (rank == 0)
@@ -537,10 +544,7 @@ int main(int argc, char **argv) {
     char *inputfile = argv[3];
 
     double **A = alloc_matrix(n, m), **L = alloc_matrix(n, m),
-           **U = alloc_matrix(n, m); //, **D;
-    // if (rank == 0) {
-    //     D = alloc_matrix(n, m);
-    // }
+           **U = alloc_matrix(n, m);
 
     if (rank == 0) {
         /* Read A from inputfile (only master process) */
@@ -566,17 +570,12 @@ int main(int argc, char **argv) {
     // crout(A, L, U, n);
     // crout_transpose(A, L, U, n);
     // crout_transpose_contiguous_buffer(A, L, U, n);
-    crout_gatherall(A, L, U, n);
-    // crout_async(A, L, U, n);
+    // crout_gatherall(A, L, U, n);
+    crout_async(A, L, U, n);
     TIMEIT_END("Decomposition");
 
     /* All processes other than master can exit */
     if (rank == 0) {
-        TIMEIT_START;
-        // Construct D matrix
-        // LtoD(L, D, n, m);
-        TIMEIT_END("D matrix");
-
         TIMEIT_START;
         /* Print L matrix (make it unit) */
         char buffer[1000];
@@ -584,11 +583,6 @@ int main(int argc, char **argv) {
         FILE *lfile = fopen(buffer, "w");
         print_matrix(lfile, L, n, m);
         fclose(lfile);
-        /* Print D matrix */
-        // sprintf(buffer, "output_D_%d.txt", num_processes);
-        // FILE *dfile = fopen(buffer, "w");
-        // print_matrix(dfile, D, n, m);
-        // fclose(dfile);
         /* Print U matrix */
         sprintf(buffer, "output_U_%d.txt", num_processes);
         FILE *ufile = fopen(buffer, "w");
@@ -599,8 +593,6 @@ int main(int argc, char **argv) {
     dealloc_matrix(A);
     dealloc_matrix(L);
     dealloc_matrix(U);
-    // if (rank == 0)
-    //     dealloc_matrix(D);
     MPI_Finalize();
     return 0;
 }
