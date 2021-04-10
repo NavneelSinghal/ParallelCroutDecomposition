@@ -502,7 +502,7 @@ void crout_async(double **A, double **L, double **U, int n) {
             send_turn[2 * (i - st)] -= sum;
 
             sum = 0;
-            for (k = 0; k < j; k++)
+            for (k = j - 1; k < j; k++)
                 sum += Lj[k] * Ui[k];
             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
             send_turn[2 * (i - st) + 1] =
@@ -568,9 +568,9 @@ int main(int argc, char **argv) {
     // Step 2 : Decompose matrix in parallel
     TIMEIT_START;
     // crout(A, L, U, n);
-    crout_transpose(A, L, U, n);
-    // crout_gatherall(A, L, U, n);
-    // crout_async(A, L, U, n);
+    /* crout_transpose(A, L, U, n); */
+    /* crout_gatherall(A, L, U, n); */
+    crout_async(A, L, U, n);
     TIMEIT_END("Decomposition");
 
     /* All processes other than master can exit */
