@@ -470,11 +470,6 @@ void crout_async(double **A, double **L, double **U, int n) {
             }
         }
 
-        if (j == n - 1) {
-            // we probably don't need to compute the rest of it
-            break;
-        }
-
         sum = 0;
         for (k = j - 1; k < j; k++)
             sum += Lj[k] * Uj[k];
@@ -482,6 +477,11 @@ void crout_async(double **A, double **L, double **U, int n) {
         if (Lj[j] == 0) {
             fprintf(stderr, "Fatal: Non-decomposable\n");
             MPI_Abort(MPI_COMM_WORLD, -1);
+        }
+
+        if (j == n - 1) {
+            // we probably don't need to compute the rest of it
+            break;
         }
 
         for (i = st; i < en; i++) {
@@ -511,7 +511,8 @@ void crout_async(double **A, double **L, double **U, int n) {
         turn = (turn + 1) % 2;
     }
 
-    transpose_matrix(U, n);
+    if (rank == 0)
+        transpose_matrix(U, n);
 }
 
 int main(int argc, char **argv) {
