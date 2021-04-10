@@ -537,10 +537,10 @@ int main(int argc, char **argv) {
     char *inputfile = argv[3];
 
     double **A = alloc_matrix(n, m), **L = alloc_matrix(n, m),
-           **U = alloc_matrix(n, m), **D;
-    if (rank == 0) {
-        D = alloc_matrix(n, m);
-    }
+           **U = alloc_matrix(n, m); //, **D;
+    // if (rank == 0) {
+    //     D = alloc_matrix(n, m);
+    // }
 
     if (rank == 0) {
         /* Read A from inputfile (only master process) */
@@ -566,15 +566,15 @@ int main(int argc, char **argv) {
     // crout(A, L, U, n);
     // crout_transpose(A, L, U, n);
     // crout_transpose_contiguous_buffer(A, L, U, n);
-    // crout_gatherall(A, L, U, n);
-    crout_async(A, L, U, n);
+    crout_gatherall(A, L, U, n);
+    // crout_async(A, L, U, n);
     TIMEIT_END("Decomposition");
 
     /* All processes other than master can exit */
     if (rank == 0) {
         TIMEIT_START;
         // Construct D matrix
-        LtoD(L, D, n, m);
+        // LtoD(L, D, n, m);
         TIMEIT_END("D matrix");
 
         TIMEIT_START;
@@ -585,10 +585,10 @@ int main(int argc, char **argv) {
         print_matrix(lfile, L, n, m);
         fclose(lfile);
         /* Print D matrix */
-        sprintf(buffer, "output_D_%d.txt", num_processes);
-        FILE *dfile = fopen(buffer, "w");
-        print_matrix(dfile, D, n, m);
-        fclose(dfile);
+        // sprintf(buffer, "output_D_%d.txt", num_processes);
+        // FILE *dfile = fopen(buffer, "w");
+        // print_matrix(dfile, D, n, m);
+        // fclose(dfile);
         /* Print U matrix */
         sprintf(buffer, "output_U_%d.txt", num_processes);
         FILE *ufile = fopen(buffer, "w");
@@ -599,8 +599,8 @@ int main(int argc, char **argv) {
     dealloc_matrix(A);
     dealloc_matrix(L);
     dealloc_matrix(U);
-    if (rank == 0)
-        dealloc_matrix(D);
+    // if (rank == 0)
+    //     dealloc_matrix(D);
     MPI_Finalize();
     return 0;
 }

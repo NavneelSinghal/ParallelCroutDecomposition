@@ -605,7 +605,7 @@ int main(int argc, char **argv) {
 
     TIMEIT_START;
     double **A = alloc_matrix(n, m), **L = alloc_matrix(n, m),
-           **U = alloc_matrix(n, m), **D = alloc_matrix(n, m);
+           **U = alloc_matrix(n, m); // **D = alloc_matrix(n, m);
     TIMEIT_END("malloc");
 
     /* Read A from inputfile */
@@ -649,11 +649,11 @@ int main(int argc, char **argv) {
 
     TIMEIT_START;
     // Construct D matrix
-    LtoD(L, D, n, m);
+    // LtoD(L, D, n, m);
     TIMEIT_END("D matrix");
 
     TIMEIT_START;
-#pragma omp parallel shared(L, D, U, n, m, strategy, num_threads)              \
+#pragma omp parallel shared(L, U, n, m, strategy, num_threads)              \
     num_threads(num_threads)
     {
 #pragma omp sections
@@ -667,15 +667,15 @@ int main(int argc, char **argv) {
                 print_matrix(lfile, L, n, m);
                 fclose(lfile);
             }
-#pragma omp section
-            {
-                /* Print D matrix */
-                char buffer[1000];
-                sprintf(buffer, "output_D_%d_%d.txt", strategy, num_threads);
-                FILE *dfile = fopen(buffer, "w");
-                print_matrix(dfile, D, n, m);
-                fclose(dfile);
-            }
+// #pragma omp section
+//             {
+//                 /* Print D matrix */
+//                 char buffer[1000];
+//                 sprintf(buffer, "output_D_%d_%d.txt", strategy, num_threads);
+//                 FILE *dfile = fopen(buffer, "w");
+//                 print_matrix(dfile, D, n, m);
+//                 fclose(dfile);
+//             }
 #pragma omp section
             {
                 /* Print U matrix */
@@ -694,7 +694,7 @@ int main(int argc, char **argv) {
     dealloc_matrix(A, n);
     dealloc_matrix(L, n);
     dealloc_matrix(U, n);
-    dealloc_matrix(D, n);
+    // dealloc_matrix(D, n);
     TIMEIT_END("Free");
 
     return 0;

@@ -54,37 +54,32 @@ int main(int argc, char **argv) {
     int n = atoi(argv[1]), m = atoi(argv[2]);
 
     double **A = alloc_matrix(n, m), **L = alloc_matrix(n, m),
-           **D = alloc_matrix(n, m), **U = alloc_matrix(n, m),
-           **X = alloc_matrix(n, m), **Y = alloc_matrix(n, m);
+           **U = alloc_matrix(n, m), **X = alloc_matrix(n, m);
 
     // read matrices
     FILE *afile = fopen(argv[3], "r"), *lfile = fopen(argv[4], "r"),
-         *dfile = fopen(argv[5], "r"), *ufile = fopen(argv[6], "r");
+         *ufile = fopen(argv[6], "r");
     read_matrix(afile, A, n, m);
     read_matrix(lfile, L, n, m);
-    read_matrix(dfile, D, n, m);
     read_matrix(ufile, U, n, m);
 
     // multiply matrices
-    multiply_matrix(L, D, X, n);
-    multiply_matrix(X, U, Y, n);
+    multiply_matrix(L, U, X, n);
 
     for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
-            if (dabs(A[i][j] - Y[i][j]) > EPSILON) {
+            if (dabs(A[i][j] - X[i][j]) > EPSILON) {
                 fprintf(
                     stderr,
-                    "A != LDU (match fail at row=%d col=%d : %lf != %lf) \n", i,
-                    j, A[i][j], Y[i][j]);
+                    "A != L U (match fail at row=%d col=%d : %lf != %lf) \n", i,
+                    j, A[i][j], X[i][j]);
                 return 0;
             }
 
     dealloc_matrix(A, n);
     dealloc_matrix(L, n);
-    dealloc_matrix(D, n);
     dealloc_matrix(U, n);
     dealloc_matrix(X, n);
-    dealloc_matrix(Y, n);
 
-    printf("Verified A = L D U : pass\n");
+    printf("Verified A = L U : pass\n");
 }
