@@ -437,26 +437,30 @@ void strategy32(double **A, double **L, double **U, int n) {
 
 #define LLoop(st, en)                                                          \
     for (i = st; i < en; i++) {                                                \
+        double *Li = L[i];                                                     \
         sum = 0;                                                               \
         for (k = 0; k < j; k++)                                                \
-            sum += L[i][k] * U[j][k];                                          \
-        L[i][j] = A[i][j] - sum;                                               \
+            sum += Li[k] * Uj[k];                                              \
+        Li[j] = A[i][j] - sum;                                                 \
     }
 
 #define ULoop(st, en)                                                          \
     for (i = st; i < en; i++) {                                                \
+        double *Ui = U[i];                                                     \
         sum = 0;                                                               \
         for (k = 0; k < j; k++)                                                \
-            sum += L[j][k] * U[i][k];                                          \
-        if (L[j][j] == 0)                                                      \
+            sum += Lj[k] * Ui[k];                                              \
+        if (Lj[j] == 0)                                                        \
             exit(0);                                                           \
-        U[i][j] = (A[j][i] - sum) / L[j][j];                                   \
+        Ui[j] = (A[j][i] - sum) / Lj[j];                                       \
     }
 
     for (i = 0; i < n; i++)
         U[i][i] = 1;
 
     for (j = 0; j < n; j++) {
+        double *Lj = L[j];
+        double *Uj = U[j];
         LLoop(j, j + 1)
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
     num_threads(num_threads)
@@ -488,6 +492,8 @@ void strategy4(double **A, double **L, double **U, int n) {
     int nested = (num_threads + 1) >> 1;
 
     for (j = 0; j < n; j++) {
+        double *Lj = L[j];
+        double *Uj = U[j];
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j) num_threads(nt)
         {
 #pragma omp sections
@@ -497,30 +503,33 @@ void strategy4(double **A, double **L, double **U, int n) {
 #pragma omp parallel for private(i, k, sum) shared(A, L, U, n, j)              \
     num_threads(nested)
                     for (i = j + 1; i < n; i++) {
+                        double *Li = L[i];
                         sum = 0;
                         for (k = 0; k < j; k++)
-                            sum += L[i][k] * U[j][k];
-                        L[i][j] = A[i][j] - sum;
+                            sum += Li[k] * Uj[k];
+                        Li[j] = A[i][j] - sum;
                     }
                 }
 
 #pragma omp section
                 {
                     for (i = j; i <= j; i++) {
+                        double *Li = L[i];
                         sum = 0;
                         for (k = 0; k < j; k++)
-                            sum += L[i][k] * U[j][k];
-                        L[i][j] = A[i][j] - sum;
+                            sum += Li[k] * Uj[k];
+                        Li[j] = A[i][j] - sum;
                     }
 #pragma omp parallel for private(i, k, sum) shared(A, L, U, n, j)              \
     num_threads(nested)
                     for (i = j + 1; i < n; i++) {
+                        double *Ui = U[i];
                         sum = 0;
                         for (k = 0; k < j; k++)
-                            sum += L[j][k] * U[i][k];
-                        if (L[j][j] == 0)
+                            sum += Lj[k] * Ui[k];
+                        if (Lj[j] == 0)
                             exit(0);
-                        U[i][j] = (A[j][i] - sum) / L[j][j];
+                        Ui[j] = (A[j][i] - sum) / Lj[j];
                     }
                 }
             }
