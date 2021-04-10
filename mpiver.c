@@ -99,7 +99,8 @@ void crout(double **A, double **L, double **U, int n) {
 
     /* Allocate a buffer of size 2*n for communication */
     /* Stack should be sufficient (16kB for n~1024) */
-    double buffer[2 * chunk_size(0, n) * num_processes];
+    double *buffer =
+        (double *)malloc(2 * chunk_size(0, n) * num_processes * sizeof(double));
 
     for (j = 0; j < n; j++) {
         /* Let each worker compute L[j][j] on its own O(n) */
@@ -164,6 +165,7 @@ void crout(double **A, double **L, double **U, int n) {
 
         /* Brace for next iteration */
     }
+    free(buffer);
 }
 
 // void crout_transpose(double **A, double **L, double **U, int n) {
@@ -259,7 +261,8 @@ void crout_transpose(double **A, double **L, double **U, int n) {
 
     /* Allocate a buffer of size 2*n for communication */
     /* Stack should be sufficient (16kB for n~1024) */
-    double buffer[2 * chunk_size(0, n) * num_processes];
+    double *buffer =
+        (double *)malloc(sizeof(double) * 2 * chunk_size(0, n) * num_processes);
 
     for (j = 0; j < n; j++) {
 
@@ -335,6 +338,8 @@ void crout_transpose(double **A, double **L, double **U, int n) {
 
     if (rank == 0)
         transpose_matrix(U, n);
+
+    free(buffer);
 }
 
 void crout_gatherall(double **A, double **L, double **U, int n) {
@@ -349,8 +354,10 @@ void crout_gatherall(double **A, double **L, double **U, int n) {
 
     /* Allocate a buffer of size 2*n for communication */
     /* Stack should be sufficient (16kB for n~1024) */
-    double buffer[2 * chunk_size(0, n) * num_processes];
-    double recv_buffer[2 * chunk_size(0, n) * num_processes];
+    double *buffer =
+        (double *)malloc(sizeof(double) * 2 * chunk_size(0, n) * num_processes);
+    double *recv_buffer =
+        (double *)malloc(sizeof(double) * 2 * chunk_size(0, n) * num_processes);
 
     for (j = 0; j < n; j++) {
 
@@ -418,6 +425,8 @@ void crout_gatherall(double **A, double **L, double **U, int n) {
 
     if (rank == 0)
         transpose_matrix(U, n);
+    free(buffer);
+    free(recv_buffer);
 }
 
 void crout_async(double **A, double **L, double **U, int n) {
@@ -432,8 +441,14 @@ void crout_async(double **A, double **L, double **U, int n) {
 
     /* Allocate a buffers of size 2*n for communication */
     /* Stack should be sufficient (64kB for n~1024) */
-    double send_buffer[2][2 * chunk_size(0, n) * num_processes];
-    double recv_buffer[2][2 * chunk_size(0, n) * num_processes];
+    double **send_buffer = (double **)malloc(sizeof(double *) * 2);
+    double **recv_buffer = (double **)malloc(sizeof(double *) * 2);
+    for (int i = 0; i < 2; ++i) {
+        send_buffer[i] = (double *)malloc(sizeof(double) * 2 *
+                                          chunk_size(0, n) * num_processes);
+        recv_buffer[i] = (double *)malloc(sizeof(double) * 2 *
+                                          chunk_size(0, n) * num_processes);
+    }
     int turn = 0; // Which buffer to use this iteration
     MPI_Request allgather_request = MPI_REQUEST_NULL;
 
@@ -528,6 +543,12 @@ void crout_async(double **A, double **L, double **U, int n) {
 
     if (rank == 0)
         transpose_matrix(U, n);
+    for (int i = 0; i < 2; ++i) {
+        free(send_buffer[i]);
+        free(recv_buffer[i]);
+    }
+    free(send_buffer);
+    free(recv_buffer);
 }
 
 int main(int argc, char **argv) {

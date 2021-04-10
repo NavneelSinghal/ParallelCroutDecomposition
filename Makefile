@@ -15,11 +15,11 @@ tests/gen: tests/gen.c
 checker: checker.c
 	$(CC) -O3 -fopenmp $(WFLAGS) -o $@ $<
 
-N := 1000
+N := 5000
 seed := 30
 s := 1
 avg := 0
-strategy := 2
+strategy := 4
 num_threads := 8
 
 clean:
