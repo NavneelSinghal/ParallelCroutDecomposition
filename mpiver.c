@@ -603,29 +603,26 @@ int main(int argc, char **argv) {
     TIMEIT_END("Decomposition");
 
     /* All processes other than master can exit */
+    MPI_Finalize();
+
     if (rank == 1 || num_processes == 1) {
-        RAW_TIMEIT_START;
         /* Print L matrix (make it unit) */
         char buffer[1000];
         sprintf(buffer, "output_L_%d.txt", num_processes);
         FILE *lfile = fopen(buffer, "w");
         print_matrix(lfile, L, n, m);
         fclose(lfile);
-        RAW_TIMEIT_END("Printing L");
     }
     if (rank == 0) {
-        RAW_TIMEIT_START;
         /* Print U matrix */
         char buffer[1000];
         sprintf(buffer, "output_U_%d.txt", num_processes);
         FILE *ufile = fopen(buffer, "w");
         print_matrix(ufile, U, n, m);
         fclose(ufile);
-        RAW_TIMEIT_END("Printing U");
     }
     dealloc_matrix(A);
     dealloc_matrix(L);
     dealloc_matrix(U);
-    MPI_Finalize();
     return 0;
 }

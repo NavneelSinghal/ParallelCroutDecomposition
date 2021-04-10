@@ -15,7 +15,7 @@ tests/gen: tests/gen.c
 checker: checker.c
 	$(CC) -O3 -fopenmp $(WFLAGS) -o $@ $<
 
-N := 5000
+N := 1000
 seed := 30
 s := 1
 avg := 0
