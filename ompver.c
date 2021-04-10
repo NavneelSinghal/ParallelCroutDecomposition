@@ -245,23 +245,27 @@ void strategy22_transpose(double **A, double **L, double **U, int n) {
         U[i][i] = 1;
 
     for (int j = 0; j < n; ++j) {
+        double *Lj = L[j];
+        double *Uj = U[j];
 #pragma omp parallel for num_threads(num_threads)
         for (int i = j; i < n; ++i) {
+            double *Li = L[i];
             double sum = 0;
             for (int k = 0; k < j; ++k)
-                sum += L[i][k] * U[j][k];
-            L[i][j] = A[i][j] - sum;
+                sum += Li[k] * Uj[k];
+            Li[j] = A[i][j] - sum;
         }
 
-        if (L[j][j] == 0)
+        if (Lj[j] == 0)
             exit(0);
 
 #pragma omp parallel for num_threads(num_threads)
         for (int i = j; i < n; ++i) {
+            double *Ui = U[i];
             double sum = 0;
             for (int k = 0; k < j; ++k)
-                sum += L[j][k] * U[i][k];
-            U[i][j] = (A[j][i] - sum) / L[j][j];
+                sum += Lj[k] * Ui[k];
+            Ui[j] = (A[j][i] - sum) / Lj[j];
         }
     }
 
