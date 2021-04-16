@@ -6,10 +6,19 @@
 int num_threads;
 double start_time, end_time;
 
+#ifdef LOCAL
+
 #define TIMEIT_START (start_time = omp_get_wtime())
 #define TIMEIT_END(section)                                                    \
     end_time = omp_get_wtime();                                                \
     printf(section " time elapsed = %.2lf ms\n", (end_time - start_time) * 1000)
+
+#else
+
+#define TIMEIT_START 1
+#define TIMEIT_END(section) 1
+
+#endif
 
 #define min(a, b) a < b ? a : b
 
@@ -429,7 +438,7 @@ void strategy3(double **A, double **L, double **U, int n) {
 #pragma omp section
                 { LLoop(n2, n) }
 #pragma omp section
-                { ULoop(j, n2) }
+                { ULoop(j + 1, n2) }
 #pragma omp section
                 { ULoop(n2, n) }
             }
@@ -474,14 +483,14 @@ void strategy32(double **A, double **L, double **U, int n) {
         double *Uj = U[j];
         LLoop(j, j + 1)
 #pragma omp parallel private(i, k, sum) shared(A, L, U, n, j)                  \
-    num_threads(num_threads)
+    num_threads(min(2, num_threads))
         {
 #pragma omp sections
             {
 #pragma omp section
                 { LLoop(j + 1, n) }
 #pragma omp section
-                { ULoop(j, n) }
+                { ULoop(j + 1, n) }
             }
         }
     }
@@ -646,7 +655,7 @@ int main(int argc, char **argv) {
         // strategy23_transpose(A, L, U, n);
         break;
     case 2:
-        /* strategy3(A, L, U, n); */
+        // strategy3(A, L, U, n);
         strategy32(A, L, U, n);
         break;
     case 3:

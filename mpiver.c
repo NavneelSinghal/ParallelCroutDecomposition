@@ -7,6 +7,8 @@
 int rank, num_processes;
 double start_time, end_time;
 
+#ifdef LOCAL
+
 #define RAW_TIMEIT_START start_time = MPI_Wtime();
 #define RAW_TIMEIT_END(section)                                                \
     {                                                                          \
@@ -25,6 +27,15 @@ double start_time, end_time;
         printf(section " time elapsed = %.2lf ms\n",                           \
                (end_time - start_time) * 1000);                                \
     }
+
+#else
+
+#define RAW_TIMEIT_START 1;
+#define RAW_TIMEIT_END(section) 1;
+#define TIMEIT_START 1;
+#define TIMEIT_END(section) 1;
+
+#endif
 
 int min(int a, int b) { return a < b ? a : b; }
 

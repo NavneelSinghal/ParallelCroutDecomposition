@@ -1,0 +1,300 @@
+N = 200, Threads = 1, Strategy = 0
+
+real	0m0.036s
+user	0m0.036s
+sys	0m0.000s
+
+N = 200, Threads = 1, Strategy = 1
+
+real	0m0.036s
+user	0m0.036s
+sys	0m0.000s
+
+N = 200, Threads = 1, Strategy = 2
+
+real	0m0.036s
+user	0m0.035s
+sys	0m0.002s
+
+N = 200, Threads = 1, Strategy = 3
+
+real	0m0.036s
+user	0m0.036s
+sys	0m0.000s
+
+N = 200, Threads = 1, Strategy = 4
+
+real	0m1.447s
+user	0m0.052s
+sys	0m0.021s
+
+N = 200, Threads = 2, Strategy = 0
+
+real	0m0.027s
+user	0m0.042s
+sys	0m0.008s
+
+N = 200, Threads = 2, Strategy = 1
+
+real	0m0.024s
+user	0m0.045s
+sys	0m0.000s
+
+N = 200, Threads = 2, Strategy = 2
+
+real	0m0.024s
+user	0m0.046s
+sys	0m0.000s
+
+N = 200, Threads = 2, Strategy = 3
+
+real	0m0.024s
+user	0m0.045s
+sys	0m0.000s
+
+N = 200, Threads = 2, Strategy = 4
+
+real	0m1.588s
+user	0m0.096s
+sys	0m0.018s
+
+N = 200, Threads = 4, Strategy = 0
+
+real	0m0.027s
+user	0m0.097s
+sys	0m0.000s
+
+N = 200, Threads = 4, Strategy = 1
+
+real	0m0.023s
+user	0m0.081s
+sys	0m0.004s
+
+N = 200, Threads = 4, Strategy = 2
+
+real	0m0.025s
+user	0m0.086s
+sys	0m0.001s
+
+N = 200, Threads = 4, Strategy = 3
+
+real	0m0.028s
+user	0m0.100s
+sys	0m0.000s
+
+N = 200, Threads = 4, Strategy = 4
+
+real	0m1.592s
+user	0m0.118s
+sys	0m0.094s
+
+N = 200, Threads = 8, Strategy = 0
+
+real	0m0.031s
+user	0m0.199s
+sys	0m0.000s
+
+N = 200, Threads = 8, Strategy = 1
+
+real	0m0.025s
+user	0m0.179s
+sys	0m0.002s
+
+N = 200, Threads = 8, Strategy = 2
+
+real	0m0.028s
+user	0m0.180s
+sys	0m0.000s
+
+N = 200, Threads = 8, Strategy = 3
+
+real	0m0.044s
+user	0m0.259s
+sys	0m0.016s
+
+N = 200, Threads = 8, Strategy = 4
+
+real	0m1.612s
+user	0m0.521s
+sys	0m0.170s
+
+N = 200, Threads = 16, Strategy = 0
+
+real	0m0.037s
+user	0m0.061s
+sys	0m0.000s
+
+N = 200, Threads = 16, Strategy = 1
+
+real	0m0.038s
+user	0m0.114s
+sys	0m0.019s
+
+N = 200, Threads = 16, Strategy = 2
+
+real	0m0.034s
+user	0m0.064s
+sys	0m0.000s
+
+N = 200, Threads = 16, Strategy = 3
+
+real	0m0.368s
+user	0m1.748s
+sys	0m0.073s
+
+N = 200, Threads = 16, Strategy = 4
+
+real	0m1.704s
+user	0m2.643s
+sys	0m0.989s
+
+N = 1000, Threads = 1, Strategy = 0
+
+real	0m1.687s
+user	0m1.661s
+sys	0m0.026s
+
+N = 1000, Threads = 1, Strategy = 1
+
+real	0m1.505s
+user	0m1.485s
+sys	0m0.020s
+
+N = 1000, Threads = 1, Strategy = 2
+
+real	0m1.505s
+user	0m1.480s
+sys	0m0.025s
+
+N = 1000, Threads = 1, Strategy = 3
+
+real	0m1.511s
+user	0m1.482s
+sys	0m0.028s
+
+N = 1000, Threads = 1, Strategy = 4
+
+real	0m2.936s
+user	0m1.530s
+sys	0m0.044s
+
+N = 1000, Threads = 2, Strategy = 0
+
+real	0m1.470s
+user	0m1.708s
+sys	0m0.025s
+
+N = 1000, Threads = 2, Strategy = 1
+
+real	0m0.897s
+user	0m1.536s
+sys	0m0.024s
+
+N = 1000, Threads = 2, Strategy = 2
+
+real	0m0.898s
+user	0m1.516s
+sys	0m0.044s
+
+N = 1000, Threads = 2, Strategy = 3
+
+real	0m0.902s
+user	0m1.553s
+sys	0m0.016s
+
+N = 1000, Threads = 2, Strategy = 4
+
+real	0m2.552s
+user	0m2.269s
+sys	0m0.063s
+
+N = 1000, Threads = 4, Strategy = 0
+
+real	0m1.468s
+user	0m1.776s
+sys	0m0.012s
+
+N = 1000, Threads = 4, Strategy = 1
+
+real	0m0.702s
+user	0m1.616s
+sys	0m0.020s
+
+N = 1000, Threads = 4, Strategy = 2
+
+real	0m0.896s
+user	0m1.582s
+sys	0m0.036s
+
+N = 1000, Threads = 4, Strategy = 3
+
+real	0m0.780s
+user	0m1.795s
+sys	0m0.041s
+
+N = 1000, Threads = 4, Strategy = 4
+
+real	0m2.471s
+user	0m4.085s
+sys	0m0.225s
+
+N = 1000, Threads = 8, Strategy = 0
+
+real	0m1.486s
+user	0m1.907s
+sys	0m0.025s
+
+N = 1000, Threads = 8, Strategy = 1
+
+real	0m0.676s
+user	0m2.290s
+sys	0m0.036s
+
+N = 1000, Threads = 8, Strategy = 2
+
+real	0m0.902s
+user	0m1.724s
+sys	0m0.020s
+
+N = 1000, Threads = 8, Strategy = 3
+
+real	0m0.771s
+user	0m2.472s
+sys	0m0.129s
+
+N = 1000, Threads = 8, Strategy = 4
+
+real	0m3.304s
+user	0m14.567s
+sys	0m0.780s
+
+N = 1000, Threads = 16, Strategy = 0
+
+real	0m1.572s
+user	0m1.908s
+sys	0m0.016s
+
+N = 1000, Threads = 16, Strategy = 1
+
+real	0m0.828s
+user	0m2.470s
+sys	0m0.156s
+
+N = 1000, Threads = 16, Strategy = 2
+
+real	0m0.912s
+user	0m1.573s
+sys	0m0.016s
+
+N = 1000, Threads = 16, Strategy = 3
+
+real	0m3.253s
+user	0m14.680s
+sys	0m0.402s
+
+N = 1000, Threads = 16, Strategy = 4
+
+real	0m4.791s
+user	0m36.519s
+sys	0m3.657s
+
