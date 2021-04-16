@@ -1,0 +1,72 @@
+Note:
+1. single threaded hasn't been computed
+2. checking hasn't been carried out
+3. sections need to be improved
+
+13:51:49, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 4 1
+malloc time elapsed = 90.01 ms
+Reading matrix time elapsed = 4260.85 ms
+Decomposition time elapsed = 28737.06 ms
+Printing time elapsed = 9468.77 ms
+Free time elapsed = 20.65 ms
+13:52:33, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 2 1
+malloc time elapsed = 167.14 ms
+Reading matrix time elapsed = 4464.74 ms
+Decomposition time elapsed = 57049.52 ms
+Printing time elapsed = 10333.59 ms
+Free time elapsed = 19.70 ms
+13:53:55, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 8 1
+malloc time elapsed = 60.42 ms
+Reading matrix time elapsed = 4198.93 ms
+Decomposition time elapsed = 23928.54 ms
+Printing time elapsed = 9045.52 ms
+Free time elapsed = 23.25 ms
+14:15:42, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 16 1
+malloc time elapsed = 66.58 ms
+Reading matrix time elapsed = 4215.78 ms
+Decomposition time elapsed = 27299.84 ms
+Printing time elapsed = 9737.95 ms
+Free time elapsed = 20.21 ms
+14:16:32, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 2 2
+malloc time elapsed = 166.07 ms
+Reading matrix time elapsed = 4453.84 ms
+Decomposition time elapsed = 56886.22 ms
+Printing time elapsed = 10805.88 ms
+Free time elapsed = 21.40 ms
+14:17:52, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 4 2
+malloc time elapsed = 91.66 ms
+Reading matrix time elapsed = 4618.00 ms
+Decomposition time elapsed = 62377.27 ms
+Printing time elapsed = 10472.23 ms
+Free time elapsed = 21.30 ms
+14:19:30, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 8 2
+malloc time elapsed = 67.24 ms
+Reading matrix time elapsed = 4701.85 ms
+Decomposition time elapsed = 78724.47 ms
+Printing time elapsed = 11253.20 ms
+Free time elapsed = 22.06 ms
+14:21:12, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 2 3
+malloc time elapsed = 167.04 ms
+Reading matrix time elapsed = 4671.26 ms
+Decomposition time elapsed = 60519.47 ms
+Printing time elapsed = 12550.52 ms
+Free time elapsed = 22.48 ms
+14:23:27, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 4 3
+malloc time elapsed = 96.33 ms
+Reading matrix time elapsed = 4749.47 ms
+Decomposition time elapsed = 35201.87 ms
+Printing time elapsed = 11085.47 ms
+Free time elapsed = 23.57 ms
+14:24:29, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 8 3
+malloc time elapsed = 69.17 ms
+Reading matrix time elapsed = 5124.74 ms
+Decomposition time elapsed = 30834.21 ms
+Printing time elapsed = 11796.88 ms
+Free time elapsed = 24.73 ms
+14:25:19, Fri Apr 16 ~/Desktop/IIT/Sem6/parallel/assignments/a2$ bash run.sh 5000 testmatrix 16 3
+malloc time elapsed = 68.46 ms
+Reading matrix time elapsed = 5284.65 ms
+Decomposition time elapsed = 33431.71 ms
+Printing time elapsed = 12369.45 ms
+Free time elapsed = 23.37 ms
+

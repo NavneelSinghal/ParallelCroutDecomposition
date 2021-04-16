@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
         {
             /* Print U matrix */
             sprintf(buffer, "output_U_4_%d.txt", num_processes);
-            write_output(buffer, L, n);
+            write_output(buffer, U, n);
             // FILE *ufile = fopen(buffer, "w");
             // print_matrix(ufile, U, n, m);
             // fclose(ufile);

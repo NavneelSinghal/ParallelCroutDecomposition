@@ -19,7 +19,7 @@ N := 1000
 seed := 30
 s := 1
 avg := 0
-strategy := 4
+strategy := 1# 0 indexed now
 num_threads := 8
 
 clean:
@@ -46,9 +46,9 @@ mpicheck: clean mpiver tests/gen checker
 	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix
 	@mpiexec -n $(num_threads) ./mpiver $(N) $(N) testmatrix
 	@./checker $(N) $(N) \
-	  testmatrix output_L_$(num_threads).txt \
-	  output_D_$(num_threads).txt \
-	  output_U_$(num_threads).txt
+	  testmatrix output_L_4_$(num_threads).txt \
+	  output_D_4_$(num_threads).txt \
+	  output_U_4_$(num_threads).txt
 
 check: clean ompver tests/gen checker
 	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix

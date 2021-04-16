@@ -50,6 +50,8 @@ void multiply_matrix(double **A, double **B, double **C, int n) {
 }
 
 int main(int argc, char **argv) {
+    for (int i = 0; i < argc; ++i) printf("%s ", argv[i]);
+    printf("\n");
     assert(argc == 7);
     int n = atoi(argv[1]), m = atoi(argv[2]);
 
