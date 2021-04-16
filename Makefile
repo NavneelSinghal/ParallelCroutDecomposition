@@ -26,6 +26,14 @@ clean:
 	@rm -f testmatrix
 	@rm -f output_*.txt
 
+cleanexe:
+	@rm -f mpiver
+	@rm -f ompver
+	@rm -f checker
+
+gen: clean tests/gen
+	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix
+
 run: clean ompver tests/gen
 	@./tests/gen $(N) $(seed) $(s) $(avg) > testmatrix
 	@time ./ompver $(N) $(N) testmatrix $(num_threads) $(strategy)

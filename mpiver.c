@@ -65,6 +65,17 @@ void print_matrix(FILE *output, double **mat, int n, int m) {
     }
 }
 
+void write_output(char fname[], double **arr, int n) {
+    FILE *f = fopen(fname, "w");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            fprintf(f, "%0.12f ", arr[i][j]);
+        }
+        fprintf(f, "\n");
+    }
+    fclose(f);
+}
+
 void transpose_matrix(double **U, int n) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < i; j++) {
@@ -167,88 +178,6 @@ void crout(double **A, double **L, double **U, int n) {
     }
     free(buffer);
 }
-
-// void crout_transpose(double **A, double **L, double **U, int n) {
-//     int i, j, k;
-//     double sum = 0;
-//
-//     /* Let each worker do this part O(n) */
-//     for (i = 0; i < n; i++) {
-//         U[i][i] = 1;
-//     }
-//
-//     /* Allocate a buffer of size 2*n for communication */
-//     /* Stack should be sufficient (16kB for n~1024) */
-//     double buffer[2 * chunk_size(0, n) * num_processes];
-//
-//     for (j = 0; j < n; j++) {
-//         /* Let each worker compute L[j][j] on its own O(n) */
-//         sum = 0;
-//         for (k = 0; k < j; k++)
-//             sum += L[j][k] * U[j][k];
-//         L[j][j] = A[j][j] - sum;
-//         if (L[j][j] == 0) {
-//             fprintf(stderr, "Fatal: Non-decomposable\n");
-//             MPI_Abort(MPI_COMM_WORLD, -1);
-//         }
-//
-//         /* We now need to iterate from j+1 -> n in num_processes chunks.
-//          * Verify that :
-//          *      st[rank=0] = 0
-//          *      en[rank=n-1] = n
-//          *      en[rank=i] = st[rank=i+1]
-//          */
-//
-//         if (j == n - 1) {
-//             // we probably don't need to compute the rest of it
-//             break;
-//         }
-//
-//         // chunk size becomes 0 if j == n - 1,
-//         // since there are really no iterations to be done
-//         int size = chunk_size(j + 1, n);
-//         int st = j + 1 + rank * size;
-//         int en = min(n, st + size);
-//
-//         for (i = st; i < en; i++) {
-//             sum = 0;
-//             for (k = 0; k < j; k++)
-//                 sum += L[i][k] * U[j][k];
-//             /* L[i][j] = A[i][j] - sum; */
-//             buffer[2 * (i - st)] = A[i][j] - sum;
-//
-//             sum = 0;
-//             for (k = 0; k < j; k++)
-//                 sum += L[j][k] * U[i][k];
-//             /* U[j][i] = (A[j][i] - sum) / L[j][j]; */
-//             buffer[2 * (i - st) + 1] = (A[j][i] - sum) / L[j][j];
-//         }
-//
-//         /* Gather all results of this iteration into master */
-//         if (rank != 0)
-//             MPI_Gather(buffer, 2 * size, MPI_DOUBLE, NULL, 2 * size,
-//             MPI_DOUBLE,
-//                        0, MPI_COMM_WORLD);
-//         else
-//             MPI_Gather(MPI_IN_PLACE, 2 * size, MPI_DOUBLE, buffer, 2 * size,
-//                        MPI_DOUBLE, 0, MPI_COMM_WORLD);
-//
-//         /* Broadcast buffer from master back to all workers */
-//         MPI_Bcast(buffer, 2 * size * num_processes, MPI_DOUBLE, 0,
-//                   MPI_COMM_WORLD);
-//
-//         /* Copy buffer into respective matrices */
-//         for (i = j + 1; i < n; i++) {
-//             L[i][j] = buffer[2 * (i - (j + 1))];
-//             U[i][j] = buffer[2 * (i - (j + 1)) + 1];
-//         }
-//
-//         /* Brace for next iteration */
-//     }
-//
-//     if (rank == 0)
-//         transpose_matrix(U, n);
-// }
 
 void crout_transpose(double **A, double **L, double **U, int n) {
     int i, j, k;
@@ -602,27 +531,48 @@ int main(int argc, char **argv) {
     crout_async(A, L, U, n);
     TIMEIT_END("Decomposition");
 
-    /* All processes other than master can exit */
-    MPI_Finalize();
-
-    if (rank == 1 || num_processes == 1) {
-        /* Print L matrix (make it unit) */
-        char buffer[1000];
-        sprintf(buffer, "output_L_%d.txt", num_processes);
-        FILE *lfile = fopen(buffer, "w");
-        print_matrix(lfile, L, n, m);
-        fclose(lfile);
-    }
     if (rank == 0) {
-        /* Print U matrix */
         char buffer[1000];
-        sprintf(buffer, "output_U_%d.txt", num_processes);
-        FILE *ufile = fopen(buffer, "w");
-        print_matrix(ufile, U, n, m);
-        fclose(ufile);
+        {
+            /* Print L matrix (make it unit) */
+            sprintf(buffer, "output_L_4_%d.txt", num_processes);
+            write_output(buffer, L, n);
+            // FILE *lfile = fopen(buffer, "w");
+            // print_matrix(lfile, L, n, m);
+            // fclose(lfile);
+        }
+        {
+            /* Print U matrix */
+            sprintf(buffer, "output_U_4_%d.txt", num_processes);
+            write_output(buffer, L, n);
+            // FILE *ufile = fopen(buffer, "w");
+            // print_matrix(ufile, U, n, m);
+            // fclose(ufile);
+        }
     }
+
+    // if (rank == 1 || num_processes == 1) {
+    //     /* Print L matrix (make it unit) */
+    //     char buffer[1000];
+    //     sprintf(buffer, "output_L_%d.txt", num_processes);
+    //     FILE *lfile = fopen(buffer, "w");
+    //     print_matrix(lfile, L, n, m);
+    //     fclose(lfile);
+    // }
+    // if (rank == 0) {
+    //     /* Print U matrix */
+    //     char buffer[1000];
+    //     sprintf(buffer, "output_U_%d.txt", num_processes);
+    //     FILE *ufile = fopen(buffer, "w");
+    //     print_matrix(ufile, U, n, m);
+    //     fclose(ufile);
+    // }
     dealloc_matrix(A);
     dealloc_matrix(L);
     dealloc_matrix(U);
+
+    /* All processes other than master can exit */
+    MPI_Finalize();
+
     return 0;
 }

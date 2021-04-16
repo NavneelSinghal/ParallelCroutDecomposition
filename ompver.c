@@ -51,6 +51,17 @@ void print_matrix(FILE *output, double **mat, int n, int m) {
     }
 }
 
+void write_output(char fname[], double **arr, int n) {
+    FILE *f = fopen(fname, "w");
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            fprintf(f, "%0.12f ", arr[i][j]);
+        }
+        fprintf(f, "\n");
+    }
+    fclose(f);
+}
+
 void multiply_matrix(double **A, double **B, double **C, int n) {
 #pragma omp parallel for shared(A, B, C, n)
     for (int i = 0; i < n; i++) {
@@ -622,10 +633,10 @@ int main(int argc, char **argv) {
     // for time being assuming strategy 1 = serial
     TIMEIT_START;
     switch (strategy) {
-    case 1:
+    case 0:
         strategy1(A, L, U, n);
         break;
-    case 2:
+    case 1:
         // strategy2(A, L, U, n);
         // strategy21(A, L, U, n);
         // strategy22(A, L, U, n);
@@ -634,11 +645,11 @@ int main(int argc, char **argv) {
         // strategy23(A, L, U, n);
         // strategy23_transpose(A, L, U, n);
         break;
-    case 3:
+    case 2:
         /* strategy3(A, L, U, n); */
         strategy32(A, L, U, n);
         break;
-    case 4:
+    case 3:
         strategy4(A, L, U, n);
         // strategy42(A, L, U, n);
         break;
@@ -648,12 +659,7 @@ int main(int argc, char **argv) {
     TIMEIT_END("Decomposition");
 
     TIMEIT_START;
-    // Construct D matrix
-    // LtoD(L, D, n, m);
-    TIMEIT_END("D matrix");
-
-    TIMEIT_START;
-#pragma omp parallel shared(L, U, n, m, strategy, num_threads)              \
+#pragma omp parallel shared(L, U, n, m, strategy, num_threads)                 \
     num_threads(num_threads)
     {
 #pragma omp sections
@@ -663,27 +669,14 @@ int main(int argc, char **argv) {
                 /* Print L matrix (make it unit) */
                 char buffer[1000];
                 sprintf(buffer, "output_L_%d_%d.txt", strategy, num_threads);
-                FILE *lfile = fopen(buffer, "w");
-                print_matrix(lfile, L, n, m);
-                fclose(lfile);
+                write_output(buffer, L, n);
             }
-// #pragma omp section
-//             {
-//                 /* Print D matrix */
-//                 char buffer[1000];
-//                 sprintf(buffer, "output_D_%d_%d.txt", strategy, num_threads);
-//                 FILE *dfile = fopen(buffer, "w");
-//                 print_matrix(dfile, D, n, m);
-//                 fclose(dfile);
-//             }
 #pragma omp section
             {
                 /* Print U matrix */
                 char buffer[1000];
                 sprintf(buffer, "output_U_%d_%d.txt", strategy, num_threads);
-                FILE *ufile = fopen(buffer, "w");
-                print_matrix(ufile, U, n, m);
-                fclose(ufile);
+                write_output(buffer, U, n);
             }
         }
     }
@@ -694,7 +687,6 @@ int main(int argc, char **argv) {
     dealloc_matrix(A, n);
     dealloc_matrix(L, n);
     dealloc_matrix(U, n);
-    // dealloc_matrix(D, n);
     TIMEIT_END("Free");
 
     return 0;
