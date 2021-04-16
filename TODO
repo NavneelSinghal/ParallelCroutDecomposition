@@ -1,3 +1,5 @@
 fix sections -- partially done
 benchmark -- done
 remove printing to console -- done
+
+Note: the corrected benchmarks are for the serial print correction, so use them only in those cases

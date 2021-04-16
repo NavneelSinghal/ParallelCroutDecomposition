@@ -668,19 +668,14 @@ int main(int argc, char **argv) {
     TIMEIT_END("Decomposition");
 
     TIMEIT_START;
-#pragma omp parallel shared(L, U, n, m, strategy, num_threads)                 \
-    num_threads(num_threads)
     {
-#pragma omp sections
         {
-#pragma omp section
             {
                 /* Print L matrix (make it unit) */
                 char buffer[1000];
                 sprintf(buffer, "output_L_%d_%d.txt", strategy, num_threads);
                 write_output(buffer, L, n);
             }
-#pragma omp section
             {
                 /* Print U matrix */
                 char buffer[1000];
